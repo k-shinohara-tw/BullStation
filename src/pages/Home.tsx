@@ -75,6 +75,13 @@ export default function Home({ outRule, onOutRuleChange, showScores, onShowScore
             タイムアタック
             <span className="block text-sm font-normal text-gray-400 mt-1">10問・最速タイムに挑戦</span>
           </button>
+          <button
+            onClick={() => navigate('/countup')}
+            className="w-full py-4 rounded-2xl bg-gray-700 hover:bg-gray-600 text-white font-bold text-xl transition-colors border border-gray-600"
+          >
+            カウントアップ
+            <span className="block text-sm font-normal text-gray-400 mt-1">8ラウンド・スコアを最大化</span>
+          </button>
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-8">出題範囲: 21〜180</p>

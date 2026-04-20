@@ -5,6 +5,7 @@ import { getSavedOutRule, getSavedShowScores } from './utils/localStorage';
 import Home from './pages/Home';
 import StudyMode from './pages/StudyMode';
 import TimeAttack from './pages/TimeAttack';
+import CountUp from './pages/CountUp';
 
 export default function App() {
   const [outRule, setOutRule] = useState<OutRule>(getSavedOutRule);
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/" element={<Home outRule={outRule} onOutRuleChange={setOutRule} showScores={showScores} onShowScoresChange={setShowScores} />} />
         <Route path="/study" element={<StudyMode outRule={outRule} onOutRuleChange={setOutRule} showScores={showScores} />} />
         <Route path="/timeattack" element={<TimeAttack outRule={outRule} showScores={showScores} />} />
+        <Route path="/countup" element={<CountUp showScores={showScores} />} />
       </Routes>
     </BrowserRouter>
   );
