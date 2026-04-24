@@ -1,30 +1,30 @@
 import type { Dart, Checkout, OutRule } from '../types';
 import { ALL_DARTS } from './dartData';
 
-export function isValidFinish(dart: Dart, outRule: OutRule): boolean {
+export const isValidFinish = (dart: Dart, outRule: OutRule): boolean => {
   if (outRule === 'open') return true;
   if (outRule === 'double') return dart.type === 'double' || dart.type === 'bullseye';
   // master
   return dart.type === 'double' || dart.type === 'triple' || dart.type === 'bullseye';
-}
+};
 
-function dartQuality(dart: Dart): number {
+const dartQuality = (dart: Dart): number => {
   // Higher = better (prefer high-value, preferred finish darts)
   if (dart.type === 'triple') return 1000 + dart.value;
   if (dart.type === 'double') return 800 + dart.value;
   if (dart.type === 'bullseye') return 850;
   if (dart.type === 'bull') return 600;
   return dart.value;
-}
+};
 
-function checkoutQuality(checkout: Checkout): number {
+const checkoutQuality = (checkout: Checkout): number => {
   // Fewer darts is better, then quality of first dart
   const lengthScore = (4 - checkout.darts.length) * 100000;
   const firstScore = dartQuality(checkout.darts[0]);
   return lengthScore + firstScore;
-}
+};
 
-export function generateCheckouts(score: number, outRule: OutRule): Checkout[] {
+export const generateCheckouts = (score: number, outRule: OutRule): Checkout[] => {
   const results: Checkout[] = [];
 
   // 1 dart
@@ -60,16 +60,14 @@ export function generateCheckouts(score: number, outRule: OutRule): Checkout[] {
     }
   }
 
-  return results
-    .sort((a, b) => checkoutQuality(b) - checkoutQuality(a))
-    .slice(0, 10); // 上位10件
-}
+  return results.sort((a, b) => checkoutQuality(b) - checkoutQuality(a)).slice(0, 10); // 上位10件
+};
 
-export function isValidCheckout(
+export const isValidCheckout = (
   selectedDarts: Dart[],
   targetScore: number,
   outRule: OutRule
-): { valid: boolean; reason?: string } {
+): { valid: boolean; reason?: string } => {
   if (selectedDarts.length === 0) {
     return { valid: false, reason: '1本以上選択してください' };
   }
@@ -89,8 +87,7 @@ export function isValidCheckout(
   }
 
   return { valid: true };
-}
+};
 
-export function canCheckout(score: number, outRule: OutRule): boolean {
-  return generateCheckouts(score, outRule).length > 0;
-}
+export const canCheckout = (score: number, outRule: OutRule): boolean =>
+  generateCheckouts(score, outRule).length > 0;

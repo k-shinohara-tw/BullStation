@@ -1,26 +1,21 @@
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import type { OutRule } from './types';
-import { getSavedOutRule, getSavedShowScores } from './utils/localStorage';
-import Home from './pages/Home';
-import StudyMode from './pages/StudyMode';
-import TimeAttack from './pages/TimeAttack';
-import CountUp from './pages/CountUp';
-import ZeroOne from './pages/ZeroOne';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { Home } from './pages/home';
+import { StudyMode } from './pages/studyMode';
+import { TimeAttack } from './pages/timeAttack';
+import { CountUp } from './pages/countUp';
+import { ZeroOne } from './pages/zeroOne';
 
-export default function App() {
-  const [outRule, setOutRule] = useState<OutRule>(getSavedOutRule);
-  const [showScores, setShowScores] = useState<boolean>(getSavedShowScores);
-
-  return (
+export const App = () => (
+  <SettingsProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home outRule={outRule} onOutRuleChange={setOutRule} showScores={showScores} onShowScoresChange={setShowScores} />} />
-        <Route path="/study" element={<StudyMode outRule={outRule} onOutRuleChange={setOutRule} showScores={showScores} />} />
-        <Route path="/timeattack" element={<TimeAttack outRule={outRule} showScores={showScores} />} />
-        <Route path="/countup" element={<CountUp showScores={showScores} />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/study" element={<StudyMode />} />
+        <Route path="/timeattack" element={<TimeAttack />} />
+        <Route path="/countup" element={<CountUp />} />
         <Route path="/zeroone" element={<ZeroOne />} />
       </Routes>
     </BrowserRouter>
-  );
-}
+  </SettingsProvider>
+);

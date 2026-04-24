@@ -1,5 +1,4 @@
-
-import type { Dart } from '../types';
+import type { Dart } from '../../types';
 
 interface DartInputProps {
   selectedDarts: Dart[];
@@ -11,7 +10,13 @@ interface DartInputProps {
 
 const SLOT_COUNT = 3;
 
-export default function DartInput({ selectedDarts, onBack, onClear, onConfirm, disabled = false }: DartInputProps) {
+export const DartInput = ({
+  selectedDarts,
+  onBack,
+  onClear,
+  onConfirm,
+  disabled = false,
+}: DartInputProps) => {
   const total = selectedDarts.reduce((s, d) => s + d.value, 0);
 
   return (
@@ -24,9 +29,10 @@ export default function DartInput({ selectedDarts, onBack, onClear, onConfirm, d
             <div
               key={i}
               className={`w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all
-                ${dart
-                  ? 'border-yellow-400 bg-yellow-400/10 text-yellow-300'
-                  : 'border-gray-600 bg-gray-800/50 text-gray-600'
+                ${
+                  dart
+                    ? 'border-yellow-400 bg-yellow-400/10 text-yellow-300'
+                    : 'border-gray-600 bg-gray-800/50 text-gray-600'
                 }`}
             >
               {dart ? (
@@ -75,4 +81,4 @@ export default function DartInput({ selectedDarts, onBack, onClear, onConfirm, d
       </button>
     </div>
   );
-}
+};

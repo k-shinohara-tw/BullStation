@@ -1,5 +1,11 @@
-import type { Dart } from '../../types';
-import { makeSingleDart, makeDoubleDart, makeTripleDart, BULL_DART, BULLSEYE_DART } from '../../utils/dartData';
+import type { Dart } from '../../../types';
+import {
+  makeSingleDart,
+  makeDoubleDart,
+  makeTripleDart,
+  BULL_DART,
+  BULLSEYE_DART,
+} from '../../../utils/dartData';
 import { CX, CY, R, arcPath, SECTORS, polarToXY } from './dartBoardGeometry';
 
 interface DartBoardProps {
@@ -30,18 +36,22 @@ const MID_R = {
   double: (R.doubleInner + R.doubleOuter) / 2,
 };
 
-export default function DartBoard({ onDartSelect, selectedDarts, disabled = false, showScores = false }: DartBoardProps) {
-  const selectedKeys = new Set(selectedDarts.map(dartDisplayKey));
-
-  function dartDisplayKey(d: Dart): string {
+export const DartBoard = ({
+  onDartSelect,
+  selectedDarts,
+  disabled = false,
+  showScores = false,
+}: DartBoardProps) => {
+  const dartDisplayKey = (d: Dart): string => {
     if (d.type === 'bull') return 'bull';
     if (d.type === 'bullseye') return 'bullseye';
     return `${d.type}_${d.number}`;
-  }
+  };
 
-  function highlight(key: string): string {
-    return selectedKeys.has(key) ? 'opacity-50 brightness-150' : '';
-  }
+  const selectedKeys = new Set(selectedDarts.map(dartDisplayKey));
+
+  const highlight = (key: string): string =>
+    selectedKeys.has(key) ? 'opacity-50 brightness-150' : '';
 
   const cursorClass = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
 
@@ -106,32 +116,67 @@ export default function DartBoard({ onDartSelect, selectedDarts, disabled = fals
             {showScores ? (
               <>
                 {/* Inner single score */}
-                <text x={isx} y={isy} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="8" fontWeight="bold" fill={isEven ? '#f5e6c8' : '#1a1a1a'} className="pointer-events-none">
+                <text
+                  x={isx}
+                  y={isy}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="8"
+                  fontWeight="bold"
+                  fill={isEven ? '#f5e6c8' : '#1a1a1a'}
+                  className="pointer-events-none"
+                >
                   {number}
                 </text>
                 {/* Triple score */}
-                <text x={trx} y={try_} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="6.5" fontWeight="bold" fill="white" className="pointer-events-none">
+                <text
+                  x={trx}
+                  y={try_}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="6.5"
+                  fontWeight="bold"
+                  fill="white"
+                  className="pointer-events-none"
+                >
                   {number * 3}
                 </text>
                 {/* Outer single score */}
-                <text x={osx} y={osy} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="9" fontWeight="bold" fill={isEven ? '#f5e6c8' : '#1a1a1a'} className="pointer-events-none">
+                <text
+                  x={osx}
+                  y={osy}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="9"
+                  fontWeight="bold"
+                  fill={isEven ? '#f5e6c8' : '#1a1a1a'}
+                  className="pointer-events-none"
+                >
                   {number}
                 </text>
                 {/* Double score */}
-                <text x={dbx} y={dby} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="7" fontWeight="bold" fill="white" className="pointer-events-none">
+                <text
+                  x={dbx}
+                  y={dby}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="7"
+                  fontWeight="bold"
+                  fill="white"
+                  className="pointer-events-none"
+                >
                   {number * 2}
                 </text>
               </>
             ) : (
               /* Outer number label */
               <text
-                x={labelX} y={labelY}
-                textAnchor="middle" dominantBaseline="middle"
-                fontSize="11" fontWeight="bold"
+                x={labelX}
+                y={labelY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="11"
+                fontWeight="bold"
                 fill={COLORS.label}
                 className="pointer-events-none"
               >
@@ -144,7 +189,9 @@ export default function DartBoard({ onDartSelect, selectedDarts, disabled = fals
 
       {/* Outer bull (25) */}
       <circle
-        cx={CX} cy={CY} r={R.bull}
+        cx={CX}
+        cy={CY}
+        r={R.bull}
         fill={COLORS.bull}
         stroke={COLORS.wire}
         strokeWidth="0.5"
@@ -154,7 +201,9 @@ export default function DartBoard({ onDartSelect, selectedDarts, disabled = fals
 
       {/* Bullseye (50) */}
       <circle
-        cx={CX} cy={CY} r={R.bullseye}
+        cx={CX}
+        cy={CY}
+        r={R.bullseye}
         fill={COLORS.bullseye}
         stroke={COLORS.wire}
         strokeWidth="0.5"
@@ -163,8 +212,26 @@ export default function DartBoard({ onDartSelect, selectedDarts, disabled = fals
       />
 
       {/* Center labels */}
-      <text x={CX} y={CY - 7} textAnchor="middle" fontSize="7" fill="white" className="pointer-events-none">Bull</text>
-      <text x={CX} y={CY + 7} textAnchor="middle" fontSize="7" fill="white" className="pointer-events-none">D</text>
+      <text
+        x={CX}
+        y={CY - 7}
+        textAnchor="middle"
+        fontSize="7"
+        fill="white"
+        className="pointer-events-none"
+      >
+        Bull
+      </text>
+      <text
+        x={CX}
+        y={CY + 7}
+        textAnchor="middle"
+        fontSize="7"
+        fill="white"
+        className="pointer-events-none"
+      >
+        D
+      </text>
     </svg>
   );
-}
+};

@@ -1,4 +1,4 @@
-import { BOARD_NUMBERS } from '../../utils/dartData';
+import { BOARD_NUMBERS } from '../../../utils/dartData';
 
 export const CX = 200;
 export const CY = 200;
@@ -8,7 +8,7 @@ export const SECTOR_ANGLE = 360 / 20;
 export const R = {
   bullseye: 13,
   bull: 30,
-  singleInner: 97,  // inner single (between bull and triple)
+  singleInner: 97, // inner single (between bull and triple)
   tripleInner: 110,
   tripleOuter: 124,
   singleOuter: 183,
@@ -16,17 +16,17 @@ export const R = {
   doubleOuter: 200,
 };
 
-export function polarToXY(angleDeg: number, radius: number): [number, number] {
+export const polarToXY = (angleDeg: number, radius: number): [number, number] => {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return [CX + radius * Math.cos(rad), CY + radius * Math.sin(rad)];
-}
+};
 
-export function arcPath(
+export const arcPath = (
   startAngle: number,
   endAngle: number,
   innerR: number,
   outerR: number
-): string {
+): string => {
   const [x1, y1] = polarToXY(startAngle, outerR);
   const [x2, y2] = polarToXY(endAngle, outerR);
   const [x3, y3] = polarToXY(endAngle, innerR);
@@ -39,7 +39,7 @@ export function arcPath(
     `A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4}`,
     'Z',
   ].join(' ');
-}
+};
 
 export interface SectorInfo {
   number: number;
@@ -57,5 +57,14 @@ export const SECTORS: SectorInfo[] = BOARD_NUMBERS.map((number, i) => {
   const endAngle = startAngle + SECTOR_ANGLE;
   const midAngle = startAngle + SECTOR_ANGLE / 2;
   const [labelX, labelY] = polarToXY(midAngle, R.doubleOuter + 14);
-  return { number, sectorIndex: i, startAngle, endAngle, midAngle, labelX, labelY, isEven: i % 2 === 0 };
+  return {
+    number,
+    sectorIndex: i,
+    startAngle,
+    endAngle,
+    midAngle,
+    labelX,
+    labelY,
+    isEven: i % 2 === 0,
+  };
 });
