@@ -52,9 +52,16 @@ const TAResultPanel = ({ result, onNext, isLast }: TAResultPanelProps) => (
 
     {!result.ok && result.checkouts[0] && (
       <div className="bg-gray-800 rounded-xl p-3 text-sm">
-        <p className="text-gray-400 text-xs mb-1">
-          例: {result.checkouts[0].darts.map((d) => d.label).join(' → ')}
-        </p>
+        <div className="flex items-center gap-1 text-xs mb-1">
+          {result.checkouts[0].isStar && <span className="text-yellow-400">★</span>}
+          <span className="text-gray-400">例:</span>
+          <span className="text-white">
+            {result.checkouts[0].darts.map((d) => d.label).join(' → ')}
+          </span>
+        </div>
+        {result.checkouts[0].isStar && result.checkouts[0].reason && (
+          <p className="text-yellow-400/70 text-xs mt-0.5">{result.checkouts[0].reason}</p>
+        )}
       </div>
     )}
 
@@ -167,8 +174,11 @@ export const TimeAttackTemplate = ({
                 <span className="text-gray-400 w-10">残{r.score}</span>
                 <span className="text-white">{r.selected.map((d) => d.label).join('→')}</span>
                 {!r.ok && r.checkouts[0] && (
-                  <span className="text-gray-500 text-xs ml-auto">
-                    {r.checkouts[0].darts.map((d) => d.label).join('→')}
+                  <span className="text-xs ml-auto flex items-center gap-1">
+                    {r.checkouts[0].isStar && <span className="text-yellow-400">★</span>}
+                    <span className="text-gray-500">
+                      {r.checkouts[0].darts.map((d) => d.label).join('→')}
+                    </span>
                   </span>
                 )}
               </div>

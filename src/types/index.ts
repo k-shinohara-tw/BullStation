@@ -12,6 +12,8 @@ export interface Dart {
 export interface Checkout {
   darts: Dart[];
   total: number;
+  isStar?: boolean;
+  reason?: string;
 }
 
 export interface HighScoreEntry {

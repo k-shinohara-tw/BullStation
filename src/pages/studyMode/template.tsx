@@ -53,12 +53,20 @@ const ResultPanel = ({ ok, reason, selectedDarts, checkouts, onNext }: ResultPan
 
     <div className="bg-gray-800 rounded-xl p-3">
       <p className="text-gray-400 text-xs mb-2">模範解答</p>
-      <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+      <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
         {checkouts.slice(0, 5).map((co, i) => (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            {i === 0 && <span className="text-yellow-400 text-xs">★</span>}
-            {i > 0 && <span className="text-gray-600 text-xs">・</span>}
-            <span className="text-white">{co.darts.map((d) => d.label).join(' → ')}</span>
+          <div key={i} className="text-sm">
+            <div className="flex items-center gap-2">
+              {co.isStar ? (
+                <span className="text-yellow-400 text-xs">★</span>
+              ) : (
+                <span className="text-gray-600 text-xs">・</span>
+              )}
+              <span className="text-white">{co.darts.map((d) => d.label).join(' → ')}</span>
+            </div>
+            {co.isStar && co.reason && (
+              <p className="text-yellow-400/70 text-xs ml-5 mt-0.5">{co.reason}</p>
+            )}
           </div>
         ))}
       </div>
