@@ -22,6 +22,20 @@ const SAFE_DOUBLE_MAP = new Map<number, { remaining: number; nextDouble: number 
 // Common arrange targets: D20, D18, D16, D12 finish points
 const GOOD_ARRANGE_SCORES = new Set([40, 36, 32, 24]);
 
+// Preferred finish doubles for 01 theory: safe-chain doubles + D18 (common target)
+const PREFERRED_FINISH_DOUBLES = new Set([20, 18, 16, 10, 8, 4, 2]);
+
+// "Practical setup": single first dart → preferred double (or bull) finish.
+// This pattern is more reliable than all-triple combinations even if it takes one more dart.
+const isPracticalSetup = (checkout: Checkout): boolean => {
+  if (checkout.darts.length !== 2) return false;
+  const first = checkout.darts[0];
+  const last = checkout.darts[1];
+  if (first.type !== 'single') return false;
+  if (last.type === 'bullseye') return true;
+  return last.type === 'double' && PREFERRED_FINISH_DOUBLES.has(last.number!);
+};
+
 const getSingleValue = (dart: Dart): number | null => {
   if (dart.type === 'triple' && dart.number !== undefined) return dart.number;
   if (dart.type === 'double' && dart.number !== undefined) return dart.number;
@@ -41,37 +55,48 @@ const analyzeMisses = (checkout: Checkout): DartMissInfo[] => {
   const result: DartMissInfo[] = [];
   const { darts, total } = checkout;
 
-  for (let i = 0; i < darts.length - 1; i++) {
+  for (let i = 0; i < darts.length; i++) {
     const dart = darts[i];
     const singleVal = getSingleValue(dart);
     if (singleVal === null) continue; // already single or bull — skip
 
-    // Score remaining after hitting single instead of target
     const scoreUsedSoFar = darts.slice(0, i).reduce((s, d) => s + d.value, 0);
     const remaining = total - scoreUsedSoFar - singleVal;
     if (remaining <= 0) continue;
 
-    const dartsLeft = darts.length - i - 1; // darts still available after this one
+    const isLastDart = i === darts.length - 1;
+    const dartsLeft = darts.length - i - 1;
 
     let note = '';
-    if (remaining === 50) {
-      note = `残り50→ブル仕上げ可`;
-    } else if (remaining >= 51 && remaining <= 70 && dartsLeft >= 2) {
-      const singleNeeded = remaining - 50;
-      note = `残り${remaining}→S${singleNeeded}+ブル仕上げ可`;
-    } else if (GOOD_ARRANGE_SCORES.has(remaining)) {
-      note = `残り${remaining}（${arrangeLabel(remaining)}）`;
-    } else if (dartsLeft === 1 && remaining >= 51 && remaining <= 70) {
-      // 1 dart left: hitting single on next dart to leave 50 or a good arrange
-      const neededFor50 = remaining - 50;
-      if (neededFor50 >= 1 && neededFor50 <= 20) {
-        note = `残り${remaining}→S${neededFor50}で50残し（ブル仕上げ）`;
-      }
-    }
 
-    if (!note) {
-      // Check if a good arrange score can be reached with remaining darts
-      if (dartsLeft === 1) {
+    if (isLastDart) {
+      // Finishing dart miss: show if remaining leaves a direct double or bull
+      if (remaining === 50) {
+        note = `外しても残り50→ブル仕上げ可`;
+      } else if (remaining % 2 === 0 && remaining >= 2 && remaining <= 40) {
+        const dNum = remaining / 2;
+        const safeInfo = SAFE_DOUBLE_MAP.get(dNum);
+        note = `外しても残り${remaining}→D${dNum}仕上げ可`;
+        if (safeInfo) {
+          note += `（外しても→${safeInfo.remaining}→D${safeInfo.nextDouble}）`;
+        }
+      }
+    } else {
+      // Mid-checkout miss: show useful next-dart opportunities
+      if (remaining === 50) {
+        note = `残り50→ブル仕上げ可`;
+      } else if (remaining >= 51 && remaining <= 70 && dartsLeft >= 2) {
+        const singleNeeded = remaining - 50;
+        note = `残り${remaining}→S${singleNeeded}+ブル仕上げ可`;
+      } else if (GOOD_ARRANGE_SCORES.has(remaining)) {
+        note = `残り${remaining}（${arrangeLabel(remaining)}）`;
+      } else if (dartsLeft === 1 && remaining >= 51 && remaining <= 70) {
+        const neededFor50 = remaining - 50;
+        if (neededFor50 >= 1 && neededFor50 <= 20) {
+          note = `残り${remaining}→S${neededFor50}で50残し（ブル仕上げ）`;
+        }
+      }
+      if (!note && dartsLeft === 1) {
         for (const arr of GOOD_ARRANGE_SCORES) {
           const needed = remaining - arr;
           if (needed >= 1 && needed <= 20) {
@@ -133,11 +158,14 @@ const dartQuality = (dart: Dart): number => {
   return dart.value;
 };
 
+const PRACTICAL_SETUP_BONUS = 15000;
+
 const checkoutQuality = (checkout: Checkout, outRule: OutRule): number => {
   const lengthScore = (4 - checkout.darts.length) * 100000;
   const starBonus = isStarCheckout(checkout, outRule) ? 10000 : 0;
+  const practicalBonus = isPracticalSetup(checkout) ? PRACTICAL_SETUP_BONUS : 0;
   const firstScore = dartQuality(checkout.darts[0]);
-  return lengthScore + starBonus + firstScore;
+  return lengthScore + starBonus + practicalBonus + firstScore;
 };
 
 export const evaluateUserArrangement = (
