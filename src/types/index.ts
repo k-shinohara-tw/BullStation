@@ -9,11 +9,27 @@ export interface Dart {
   label: string;
 }
 
+export interface DartMissInfo {
+  dartLabel: string;
+  remaining: number;
+  note: string;
+}
+
 export interface Checkout {
   darts: Dart[];
   total: number;
   isStar?: boolean;
   reason?: string;
+  missAnalysis?: DartMissInfo[];
+}
+
+export interface UserArrangementEval {
+  darts: Dart[];
+  total: number;
+  isValid: boolean;
+  isStar: boolean;
+  starReason: string | null;
+  invalidReason: string | null;
 }
 
 export interface HighScoreEntry {

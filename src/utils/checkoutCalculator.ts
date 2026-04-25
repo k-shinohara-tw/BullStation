@@ -1,4 +1,4 @@
-import type { Dart, Checkout, OutRule } from '../types';
+import type { Dart, Checkout, OutRule, DartMissInfo, UserArrangementEval } from '../types';
 import { ALL_DARTS } from './dartData';
 
 export const isValidFinish = (dart: Dart, outRule: OutRule): boolean => {
@@ -19,11 +19,82 @@ const SAFE_DOUBLE_MAP = new Map<number, { remaining: number; nextDouble: number 
   [2, { remaining: 2, nextDouble: 1 }], // D2  → miss → 2  → D1
 ]);
 
+// Common arrange targets: D20, D18, D16, D12 finish points
+const GOOD_ARRANGE_SCORES = new Set([40, 36, 32, 24]);
+
+const getSingleValue = (dart: Dart): number | null => {
+  if (dart.type === 'triple' && dart.number !== undefined) return dart.number;
+  if (dart.type === 'double' && dart.number !== undefined) return dart.number;
+  return null;
+};
+
+// Label for a well-known arrange score
+const arrangeLabel = (remaining: number): string => {
+  if (remaining === 40) return 'D20仕上げ';
+  if (remaining === 36) return 'D18仕上げ';
+  if (remaining === 32) return 'D16仕上げ';
+  if (remaining === 24) return 'D12仕上げ';
+  return '';
+};
+
+const analyzeMisses = (checkout: Checkout): DartMissInfo[] => {
+  const result: DartMissInfo[] = [];
+  const { darts, total } = checkout;
+
+  for (let i = 0; i < darts.length - 1; i++) {
+    const dart = darts[i];
+    const singleVal = getSingleValue(dart);
+    if (singleVal === null) continue; // already single or bull — skip
+
+    // Score remaining after hitting single instead of target
+    const scoreUsedSoFar = darts.slice(0, i).reduce((s, d) => s + d.value, 0);
+    const remaining = total - scoreUsedSoFar - singleVal;
+    if (remaining <= 0) continue;
+
+    const dartsLeft = darts.length - i - 1; // darts still available after this one
+
+    let note = '';
+    if (remaining === 50) {
+      note = `残り50→ブル仕上げ可`;
+    } else if (remaining >= 51 && remaining <= 70 && dartsLeft >= 2) {
+      const singleNeeded = remaining - 50;
+      note = `残り${remaining}→S${singleNeeded}+ブル仕上げ可`;
+    } else if (GOOD_ARRANGE_SCORES.has(remaining)) {
+      note = `残り${remaining}（${arrangeLabel(remaining)}）`;
+    } else if (dartsLeft === 1 && remaining >= 51 && remaining <= 70) {
+      // 1 dart left: hitting single on next dart to leave 50 or a good arrange
+      const neededFor50 = remaining - 50;
+      if (neededFor50 >= 1 && neededFor50 <= 20) {
+        note = `残り${remaining}→S${neededFor50}で50残し（ブル仕上げ）`;
+      }
+    }
+
+    if (!note) {
+      // Check if a good arrange score can be reached with remaining darts
+      if (dartsLeft === 1) {
+        for (const arr of GOOD_ARRANGE_SCORES) {
+          const needed = remaining - arr;
+          if (needed >= 1 && needed <= 20) {
+            note = `残り${remaining}→S${needed}で${arr}残し（${arrangeLabel(arr)}）`;
+            break;
+          }
+        }
+      }
+    }
+
+    if (note) {
+      result.push({ dartLabel: dart.label, remaining, note });
+    }
+  }
+
+  return result;
+};
+
 // First dart should be a cricket number triple (T15–T20) or Bullseye.
 const isCricketTripleOrBull = (dart: Dart): boolean =>
   (dart.type === 'triple' && dart.number! >= 15) || dart.type === 'bullseye';
 
-const isStarCheckout = (checkout: Checkout, outRule: OutRule): boolean => {
+export const isStarCheckout = (checkout: Checkout, outRule: OutRule): boolean => {
   const first = checkout.darts[0];
   if (!isCricketTripleOrBull(first)) return false;
 
@@ -37,7 +108,7 @@ const isStarCheckout = (checkout: Checkout, outRule: OutRule): boolean => {
   return true; // open out: first-dart condition alone is sufficient
 };
 
-const getStarReason = (checkout: Checkout, outRule: OutRule): string => {
+export const getStarReason = (checkout: Checkout, outRule: OutRule): string => {
   const first = checkout.darts[0];
   const last = checkout.darts[checkout.darts.length - 1];
 
@@ -67,6 +138,25 @@ const checkoutQuality = (checkout: Checkout, outRule: OutRule): number => {
   const starBonus = isStarCheckout(checkout, outRule) ? 10000 : 0;
   const firstScore = dartQuality(checkout.darts[0]);
   return lengthScore + starBonus + firstScore;
+};
+
+export const evaluateUserArrangement = (
+  selectedDarts: Dart[],
+  targetScore: number,
+  outRule: OutRule
+): UserArrangementEval => {
+  const total = selectedDarts.reduce((s, d) => s + d.value, 0);
+  const validationResult = isValidCheckout(selectedDarts, targetScore, outRule);
+  const checkout: Checkout = { darts: selectedDarts, total };
+  const star = validationResult.valid && isStarCheckout(checkout, outRule);
+  return {
+    darts: selectedDarts,
+    total,
+    isValid: validationResult.valid,
+    isStar: star,
+    starReason: star ? getStarReason(checkout, outRule) : null,
+    invalidReason: validationResult.valid ? null : (validationResult.reason ?? null),
+  };
 };
 
 export const generateCheckouts = (score: number, outRule: OutRule): Checkout[] => {
@@ -108,12 +198,13 @@ export const generateCheckouts = (score: number, outRule: OutRule): Checkout[] =
   return results
     .sort((a, b) => checkoutQuality(b, outRule) - checkoutQuality(a, outRule))
     .slice(0, 10)
-    .map(
-      (co): Checkout =>
-        isStarCheckout(co, outRule)
-          ? { ...co, isStar: true, reason: getStarReason(co, outRule) }
-          : co
-    );
+    .map((co): Checkout => {
+      const misses = analyzeMisses(co);
+      const base: Checkout = misses.length > 0 ? { ...co, missAnalysis: misses } : co;
+      return isStarCheckout(co, outRule)
+        ? { ...base, isStar: true, reason: getStarReason(co, outRule) }
+        : base;
+    });
 };
 
 export const isValidCheckout = (

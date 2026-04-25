@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
-import type { Dart, Checkout, OutRule } from '../../types';
-import { isValidCheckout, generateCheckouts } from '../../utils/checkoutCalculator';
+import type { Dart, Checkout, OutRule, UserArrangementEval } from '../../types';
+import {
+  isValidCheckout,
+  generateCheckouts,
+  evaluateUserArrangement,
+} from '../../utils/checkoutCalculator';
 import { nextQuestion } from '../../utils/questionGenerator';
 import { useSettings } from '../../contexts/SettingsContext';
 
@@ -20,6 +24,7 @@ export interface StudyState {
   resultOk: boolean;
   resultReason: string;
   checkouts: Checkout[];
+  userEval: UserArrangementEval | null;
   stats: SessionStats;
   correctRate: number | null;
 }
@@ -32,6 +37,7 @@ export const useStudyMode = () => {
   const [resultOk, setResultOk] = useState(false);
   const [resultReason, setResultReason] = useState('');
   const [checkouts, setCheckouts] = useState<Checkout[]>([]);
+  const [userEval, setUserEval] = useState<UserArrangementEval | null>(null);
   const [stats, setStats] = useState<SessionStats>({ total: 0, correct: 0 });
 
   const handleRuleChange = (r: OutRule) => {
@@ -39,6 +45,7 @@ export const useStudyMode = () => {
     setScore(nextQuestion(r));
     setSelected([]);
     setPhase('question');
+    setUserEval(null);
   };
 
   const handleDartSelect = useCallback(
@@ -60,9 +67,11 @@ export const useStudyMode = () => {
   const handleConfirm = () => {
     const result = isValidCheckout(selected, score, outRule);
     const solutions = generateCheckouts(score, outRule);
+    const evaluation = evaluateUserArrangement(selected, score, outRule);
     setResultOk(result.valid);
     setResultReason(result.reason ?? '');
     setCheckouts(solutions);
+    setUserEval(evaluation);
     setStats((prev) => ({
       total: prev.total + 1,
       correct: prev.correct + (result.valid ? 1 : 0),
@@ -74,6 +83,7 @@ export const useStudyMode = () => {
     setScore(nextQuestion(outRule));
     setSelected([]);
     setPhase('question');
+    setUserEval(null);
   };
 
   const correctRate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : null;
@@ -87,6 +97,7 @@ export const useStudyMode = () => {
     resultOk,
     resultReason,
     checkouts,
+    userEval,
     stats,
     correctRate,
     handleRuleChange,

@@ -1,4 +1,4 @@
-import type { Dart, Checkout, OutRule } from '../../types';
+import type { Dart, Checkout, OutRule, UserArrangementEval } from '../../types';
 import type { Phase } from './hooks';
 import { GameScreen } from '../../components/layouts/GameScreen';
 import { TwoColumnLayout } from '../../components/layouts/TwoColumnLayout';
@@ -7,7 +7,6 @@ import { DartBoard } from '../../components/organisms/DartBoard/DartBoard';
 import { DartInput } from '../../components/molecules/DartInput';
 import { OutRuleSelector } from '../../components/molecules/OutRuleSelector';
 import { ScoreDisplay } from '../../components/molecules/ScoreDisplay';
-import { VerdictBanner } from '../../components/molecules/VerdictBanner';
 
 interface StudyModeTemplateProps {
   outRule: OutRule;
@@ -15,9 +14,8 @@ interface StudyModeTemplateProps {
   score: number;
   selected: Dart[];
   phase: Phase;
-  resultOk: boolean;
-  resultReason: string;
   checkouts: Checkout[];
+  userEval: UserArrangementEval | null;
   stats: { correct: number; total: number };
   correctRate: number | null;
   onRuleChange: (rule: OutRule) => void;
@@ -29,31 +27,48 @@ interface StudyModeTemplateProps {
   onNavigateHome: () => void;
 }
 
+interface UserArrangementSectionProps {
+  userEval: UserArrangementEval;
+}
+
+const UserArrangementSection = ({ userEval }: UserArrangementSectionProps) => {
+  const icon = userEval.isStar ? '★' : userEval.isValid ? '✓' : '✗';
+  const iconColor = userEval.isStar
+    ? 'text-yellow-400'
+    : userEval.isValid
+      ? 'text-green-400'
+      : 'text-red-400';
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-3">
+      <p className="text-gray-400 text-xs mb-2">あなたのアレンジ</p>
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-bold ${iconColor}`}>{icon}</span>
+        <span className="text-white text-sm">{userEval.darts.map((d) => d.label).join(' → ')}</span>
+      </div>
+      {userEval.isStar && userEval.starReason && (
+        <p className="text-yellow-400/70 text-xs mt-1">{userEval.starReason}</p>
+      )}
+      {!userEval.isValid && userEval.invalidReason && (
+        <p className="text-red-400/80 text-xs mt-1">{userEval.invalidReason}</p>
+      )}
+    </div>
+  );
+};
+
 interface ResultPanelProps {
-  ok: boolean;
-  reason: string;
-  selectedDarts: Dart[];
+  userEval: UserArrangementEval | null;
   checkouts: Checkout[];
   onNext: () => void;
 }
 
-const ResultPanel = ({ ok, reason, selectedDarts, checkouts, onNext }: ResultPanelProps) => (
+const ResultPanel = ({ userEval, checkouts, onNext }: ResultPanelProps) => (
   <div className="flex flex-col gap-3">
-    <VerdictBanner
-      ok={ok}
-      reason={!ok ? reason : undefined}
-      detail={
-        ok ? (
-          <p className="text-sm text-gray-300 mt-1">
-            {selectedDarts.map((d) => d.label).join(' → ')}
-          </p>
-        ) : undefined
-      }
-    />
+    {userEval && <UserArrangementSection userEval={userEval} />}
 
     <div className="bg-gray-800 rounded-xl p-3">
       <p className="text-gray-400 text-xs mb-2">模範解答</p>
-      <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+      <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
         {checkouts.slice(0, 5).map((co, i) => (
           <div key={i} className="text-sm">
             <div className="flex items-center gap-2">
@@ -67,6 +82,12 @@ const ResultPanel = ({ ok, reason, selectedDarts, checkouts, onNext }: ResultPan
             {co.isStar && co.reason && (
               <p className="text-yellow-400/70 text-xs ml-5 mt-0.5">{co.reason}</p>
             )}
+            {co.missAnalysis &&
+              co.missAnalysis.map((m, mi) => (
+                <p key={mi} className="text-gray-500 text-xs ml-5 mt-0.5">
+                  {m.dartLabel}外し: {m.note}
+                </p>
+              ))}
           </div>
         ))}
       </div>
@@ -87,9 +108,8 @@ export const StudyModeTemplate = ({
   score,
   selected,
   phase,
-  resultOk,
-  resultReason,
   checkouts,
+  userEval,
   stats,
   correctRate,
   onRuleChange,
@@ -145,13 +165,7 @@ export const StudyModeTemplate = ({
               onConfirm={onConfirm}
             />
           ) : (
-            <ResultPanel
-              ok={resultOk}
-              reason={resultReason}
-              selectedDarts={selected}
-              checkouts={checkouts}
-              onNext={onNext}
-            />
+            <ResultPanel userEval={userEval} checkouts={checkouts} onNext={onNext} />
           )}
         </>
       }
